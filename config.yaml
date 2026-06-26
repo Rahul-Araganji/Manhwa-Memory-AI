@@ -10,6 +10,8 @@ downloader:
   rate_limit_delay: 0.05
   # Number of retries for failed downloads
   max_retries: 3
+  # Number of concurrent page download threads
+  max_workers: 32
   # Playwright browser settings
   headless: true
   timeout_ms: 30000

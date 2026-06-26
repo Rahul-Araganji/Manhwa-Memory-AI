@@ -220,8 +220,8 @@ class DownloaderManager:
                 success_count = 0
                 from concurrent.futures import ThreadPoolExecutor, as_completed
                 
-                # Download pages concurrently using a ThreadPoolExecutor (8 parallel workers)
-                max_workers = 8
+                # Download pages concurrently using a ThreadPoolExecutor (configurable, default 32 parallel workers)
+                max_workers = self.config.downloader.get("max_workers", 32)
                 with ThreadPoolExecutor(max_workers=max_workers) as executor:
                     futures = {}
                     for p_idx, p_url in enumerate(page_urls):
