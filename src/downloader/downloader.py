@@ -208,7 +208,7 @@ class DownloaderManager:
 
                 # Scrape pages
                 try:
-                    if not ch_url.startswith("mock://"):
+                    if not ch_url.startswith("mock://") and parser.get_name() != "vortex":
                         page.goto(ch_url, wait_until="domcontentloaded", timeout=45000)
                     page_urls = parser.get_pages(page, ch_url)
                 except Exception as e:

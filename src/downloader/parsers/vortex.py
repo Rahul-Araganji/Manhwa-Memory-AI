@@ -84,28 +84,64 @@ class VortexParser(BaseParser):
         return chapters
 
     def get_pages(self, page: Page, chapter_url: str) -> List[str]:
-        # VortexScans serves manga pages dynamically. We wait for images to load
-        # Wait for selectors that contain image sources
-        page.wait_for_timeout(2000)
+        import re
+        try:
+            from curl_cffi import requests as curl_requests
+            HAS_CURL = True
+        except ImportError:
+            HAS_CURL = False
+            import requests
+
+        logger.info(f"Fetching page links from raw HTML for chapter URL: {chapter_url}")
         
-        # Scrape all image source URLs
-        img_srcs = page.evaluate("""() => {
-            return Array.from(document.querySelectorAll('img')).map(img => img.src);
-        }""")
-
-        # Filter for actual manga pages (which contain '/upload/series/')
-        manga_pages = []
-        for src in img_srcs:
-            if src and "/upload/series/" in src:
-                manga_pages.append(src)
+        headers = {
+            "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
+            "Referer": "https://vortexscans.org/"
+        }
+        
+        try:
+            if HAS_CURL:
+                res = curl_requests.get(chapter_url, headers=headers, impersonate="chrome", timeout=25)
+            else:
+                res = requests.get(chapter_url, headers=headers, timeout=20)
                 
-        # Deduplicate while preserving order
-        seen = set()
-        dedup_pages = []
-        for p in manga_pages:
-            if p not in seen:
-                seen.add(p)
-                dedup_pages.append(p)
-
-        logger.info(f"VortexParser found {len(dedup_pages)} manga page images.")
-        return dedup_pages
+            if res.status_code == 200:
+                html = res.text
+                # Find all URLs containing '/upload/series/' inside quotes in the HTML source code
+                paths = re.findall(r'"([^"]*?/upload/series/[^"]*?)"', html)
+                
+                # Deduplicate while preserving order
+                seen = set()
+                dedup_pages = []
+                for p in paths:
+                    if p not in seen:
+                        seen.add(p)
+                        dedup_pages.append(p)
+                        
+                logger.info(f"VortexParser parsed {len(dedup_pages)} page images from raw HTML in milliseconds.")
+                return dedup_pages
+            else:
+                logger.error(f"Failed to fetch chapter HTML. Status: {res.status_code}")
+        except Exception as e:
+            logger.error(f"Error fetching page links via HTTP: {e}")
+            
+        # Fallback to Playwright if raw HTTP request fails for any reason
+        logger.warning("HTTP scraper failed. Falling back to Playwright browser scraper...")
+        try:
+            if page.url != chapter_url:
+                page.goto(chapter_url, wait_until="domcontentloaded", timeout=30000)
+            page.wait_for_timeout(2000)
+            img_srcs = page.evaluate("""() => {
+                return Array.from(document.querySelectorAll('img')).map(img => img.src);
+            }""")
+            manga_pages = [src for src in img_srcs if src and "/upload/series/" in src]
+            seen = set()
+            dedup_pages = []
+            for p in manga_pages:
+                if p not in seen:
+                    seen.add(p)
+                    dedup_pages.append(p)
+            return dedup_pages
+        except Exception as pe:
+            logger.error(f"Playwright fallback also failed: {pe}")
+            raise pe
