@@ -1,0 +1,38 @@
+# Manga Memory AI Configuration File
+
+database:
+  db_path: "data/manga_memory.db"
+
+downloader:
+  # Base directory for saving manga images
+  base_dir: "data"
+  # Delay (in seconds) between requests to avoid rate limits
+  rate_limit_delay: 0.05
+  # Number of retries for failed downloads
+  max_retries: 3
+  # Playwright browser settings
+  headless: true
+  timeout_ms: 30000
+
+cleaner:
+  # Enable duplicate page removal
+  remove_duplicates: true
+  # Difference threshold for image hashes (lower means more similar)
+  duplicate_threshold: 4
+  # Enable credit page / ad removal
+  remove_credits: true
+  # List of image hashes known to be credit/ad pages to discard
+  blacklisted_hashes: []
+
+ocr:
+  # Languages for text extraction (e.g., ['en', 'ja', 'ko'])
+  languages:
+    - en
+  # Use GPU for EasyOCR if available
+  use_gpu: false
+
+gemini:
+  # Gemini API Key (if empty, looks for GEMINI_API_KEY environment variable)
+  api_key: ""
+  # Model to use for summarization
+  model: "gemini-2.5-flash"

@@ -1,0 +1,1 @@
+# Manga Memory AI package

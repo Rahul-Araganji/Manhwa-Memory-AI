@@ -1,0 +1,1781 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Manga Memory AI Dashboard</title>
+    <!-- Favicon -->
+    <link rel="icon" type="image/png" href="/static/favicon.png">
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Fira+Code:wght@400;500&family=Outfit:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    
+    <style>
+        :root {
+            --bg-gradient: linear-gradient(135deg, #0f0a1c 0%, #050409 100%);
+            --panel-bg: rgba(20, 16, 35, 0.45);
+            --panel-border: rgba(255, 255, 255, 0.08);
+            --text-main: #f3f0f7;
+            --text-muted: #9f96b2;
+            --primary: #8a5cf5;
+            --primary-glow: rgba(138, 92, 245, 0.4);
+            --primary-hover: #9d75f7;
+            --secondary: #00bcd4;
+            --success: #10b981;
+            --warning: #f59e0b;
+            --danger: #ef4444;
+            --font-main: 'Outfit', sans-serif;
+            --font-mono: 'Fira Code', monospace;
+            --shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.5);
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            scrollbar-width: thin;
+            scrollbar-color: rgba(255, 255, 255, 0.15) transparent;
+        }
+
+        /* Scrollbar styles */
+        ::-webkit-scrollbar {
+            width: 6px;
+            height: 6px;
+        }
+        ::-webkit-scrollbar-track {
+            background: transparent;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: rgba(255, 255, 255, 0.15);
+            border-radius: 10px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: rgba(255, 255, 255, 0.3);
+        }
+
+        body {
+            font-family: var(--font-main);
+            background: var(--bg-gradient);
+            color: var(--text-main);
+            height: 100vh;
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+        }
+
+        /* Header Style */
+        header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 1.25rem 2.5rem;
+            background: rgba(10, 8, 18, 0.7);
+            border-bottom: 1px solid var(--panel-border);
+            backdrop-filter: blur(12px);
+            z-index: 10;
+        }
+
+        .logo-area {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .logo-icon {
+            font-size: 2.2rem;
+            background: linear-gradient(135deg, var(--primary), var(--secondary));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            font-weight: 800;
+        }
+
+        .logo-text h1 {
+            font-size: 1.4rem;
+            font-weight: 700;
+            letter-spacing: -0.5px;
+            background: linear-gradient(to right, #ffffff, #d3cce3);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .logo-text p {
+            font-size: 0.75rem;
+            color: var(--text-muted);
+            text-transform: uppercase;
+            letter-spacing: 1.5px;
+        }
+
+        .config-area {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+
+        .key-badge {
+            background: rgba(16, 185, 129, 0.12);
+            border: 1px solid rgba(16, 185, 129, 0.3);
+            color: var(--success);
+            padding: 6px 14px;
+            border-radius: 20px;
+            font-size: 0.8rem;
+            font-weight: 500;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+        
+        .key-badge.missing {
+            background: rgba(239, 68, 68, 0.12);
+            border: 1px solid rgba(239, 68, 68, 0.3);
+            color: var(--danger);
+        }
+
+        .key-badge:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+        }
+
+        /* App Container */
+        .app-container {
+            display: flex;
+            flex: 1;
+            padding: 1.5rem;
+            gap: 1.5rem;
+            height: calc(100vh - 75px);
+        }
+
+        /* Left Panel - Sidebar */
+        .sidebar {
+            width: 320px;
+            display: flex;
+            flex-direction: column;
+            gap: 1.25rem;
+            flex-shrink: 0;
+            overflow-y: auto;
+            padding-right: 4px;
+        }
+
+        .glass-panel {
+            background: var(--panel-bg);
+            border: 1px solid var(--panel-border);
+            border-radius: 16px;
+            backdrop-filter: blur(16px);
+            box-shadow: var(--shadow);
+            padding: 1.25rem;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .panel-title {
+            font-size: 1rem;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            margin-bottom: 12px;
+            color: var(--text-main);
+            border-left: 3px solid var(--primary);
+            padding-left: 8px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .series-list-container {
+            flex: 1;
+            overflow-y: auto;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            padding-right: 4px;
+        }
+
+        .series-card {
+            background: rgba(255, 255, 255, 0.03);
+            border: 1px solid rgba(255, 255, 255, 0.05);
+            border-radius: 12px;
+            padding: 12px;
+            cursor: pointer;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .series-card:hover {
+            background: rgba(255, 255, 255, 0.07);
+            border-color: rgba(138, 92, 245, 0.3);
+            transform: translateY(-2px);
+        }
+
+        .series-card.active {
+            background: rgba(138, 92, 245, 0.12);
+            border-color: var(--primary);
+            box-shadow: 0 4px 20px rgba(138, 92, 245, 0.2);
+        }
+
+        .series-card h3 {
+            font-size: 0.95rem;
+            font-weight: 600;
+            margin-bottom: 6px;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .series-card p {
+            font-size: 0.8rem;
+            color: var(--text-muted);
+            margin-bottom: 4px;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .card-footer {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-top: 8px;
+            font-size: 0.75rem;
+        }
+
+        .chapters-badge {
+            background: rgba(255, 255, 255, 0.08);
+            padding: 2px 8px;
+            border-radius: 12px;
+            color: var(--text-main);
+        }
+
+        /* Forms */
+        .form-group {
+            margin-bottom: 12px;
+        }
+
+        .form-group label {
+            display: block;
+            font-size: 0.8rem;
+            color: var(--text-muted);
+            margin-bottom: 5px;
+            font-weight: 500;
+        }
+
+        .form-input {
+            width: 100%;
+            background: rgba(0, 0, 0, 0.3);
+            border: 1px solid var(--panel-border);
+            border-radius: 8px;
+            padding: 8px 12px;
+            color: var(--text-main);
+            font-family: inherit;
+            font-size: 0.85rem;
+            transition: all 0.2s ease;
+        }
+
+        .form-input:focus {
+            outline: none;
+            border-color: var(--primary);
+            box-shadow: 0 0 8px var(--primary-glow);
+        }
+
+        .btn {
+            background: var(--primary);
+            color: white;
+            border: none;
+            border-radius: 8px;
+            padding: 8px 16px;
+            font-family: inherit;
+            font-size: 0.85rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+        }
+
+        .btn:hover {
+            background: var(--primary-hover);
+            box-shadow: 0 4px 12px var(--primary-glow);
+            transform: translateY(-1px);
+        }
+        
+        .btn-outline-danger {
+            background: rgba(239, 68, 68, 0.08);
+            border: 1px solid rgba(239, 68, 68, 0.3);
+            color: var(--danger);
+        }
+        .btn-outline-danger:hover {
+            background: var(--danger);
+            color: white;
+            box-shadow: 0 4px 12px rgba(239, 68, 68, 0.3);
+        }
+
+        .btn-secondary {
+            background: rgba(255, 255, 255, 0.08);
+            border: 1px solid var(--panel-border);
+            color: var(--text-main);
+        }
+        .btn-secondary:hover {
+            background: rgba(255, 255, 255, 0.15);
+            box-shadow: none;
+        }
+
+        /* Right Panel - Details & Actions */
+        .main-content {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            gap: 1.5rem;
+            overflow-y: auto;
+            padding-right: 4px;
+        }
+
+        /* Empty State */
+        .empty-state {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            height: 100%;
+            color: var(--text-muted);
+            text-align: center;
+            gap: 15px;
+        }
+
+        .empty-state-icon {
+            font-size: 4rem;
+            background: linear-gradient(135deg, rgba(138, 92, 245, 0.2), rgba(0, 188, 212, 0.2));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        /* Series Header */
+        .series-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            border-bottom: 1px solid var(--panel-border);
+            padding-bottom: 15px;
+        }
+
+        .series-header-info h2 {
+            font-size: 1.8rem;
+            font-weight: 700;
+            margin-bottom: 4px;
+        }
+
+        .series-header-info p {
+            color: var(--text-muted);
+            font-size: 0.9rem;
+        }
+
+        .series-header-info a {
+            color: var(--secondary);
+            text-decoration: none;
+        }
+        .series-header-info a:hover {
+            text-decoration: underline;
+        }
+
+        /* Grid layouts */
+        .grid-two-col {
+            display: grid;
+            grid-template-columns: 350px 1fr;
+            gap: 1.5rem;
+        }
+
+        /* Control Panel */
+        .control-panel h3 {
+            font-size: 0.95rem;
+            margin-bottom: 15px;
+            color: var(--text-muted);
+        }
+
+        .pipeline-buttons {
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 10px;
+            margin-top: 15px;
+        }
+
+        /* Chapters Status View */
+        .chapters-view {
+            max-height: 280px;
+            overflow-y: auto;
+            border: 1px solid var(--panel-border);
+            border-radius: 8px;
+            background: rgba(0,0,0,0.15);
+            padding: 8px;
+        }
+
+        .chapter-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 8px 12px;
+            border-bottom: 1px solid rgba(255,255,255,0.03);
+            font-size: 0.85rem;
+        }
+
+        .chapter-row:last-child {
+            border-bottom: none;
+        }
+
+        .status-badge {
+            font-size: 0.75rem;
+            padding: 2px 8px;
+            border-radius: 12px;
+            font-weight: 600;
+            text-transform: uppercase;
+        }
+
+        .status-downloading { background: rgba(239, 68, 68, 0.15); color: var(--danger); }
+        .status-downloaded { background: rgba(245, 158, 11, 0.15); color: var(--warning); }
+        .status-cleaned { background: rgba(0, 188, 212, 0.15); color: var(--secondary); }
+        .status-ocr_completed { background: rgba(138, 92, 245, 0.15); color: var(--primary-hover); }
+        .status-summarized { background: rgba(16, 185, 129, 0.15); color: var(--success); }
+
+        /* Console Terminal Box */
+        .console-panel {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            min-height: 180px;
+        }
+
+        .console-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            background: rgba(0,0,0,0.4);
+            padding: 8px 15px;
+            border-top-left-radius: 12px;
+            border-top-right-radius: 12px;
+            border-bottom: 1px solid var(--panel-border);
+            font-size: 0.8rem;
+            color: var(--text-muted);
+        }
+
+        .console-box {
+            flex: 1;
+            background: rgba(5, 3, 10, 0.85);
+            border-bottom-left-radius: 12px;
+            border-bottom-right-radius: 12px;
+            padding: 12px;
+            font-family: var(--font-mono);
+            font-size: 0.8rem;
+            overflow-y: auto;
+            max-height: 200px;
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+        }
+
+        .log-line {
+            line-height: 1.4;
+            color: #d8d4e2;
+        }
+        .log-line-info { color: #d8d4e2; }
+        .log-line-warning { color: var(--warning); }
+        .log-line-error { color: var(--danger); font-weight: 600; }
+
+        /* Memory Refresh Display */
+        .refresh-display {
+            display: flex;
+            flex-direction: column;
+            gap: 1.5rem;
+            margin-top: 10px;
+        }
+
+        .story-panel {
+            background: rgba(16, 185, 129, 0.05);
+            border: 1px solid rgba(16, 185, 129, 0.2);
+            border-radius: 12px;
+            padding: 1.25rem;
+            line-height: 1.6;
+            font-size: 0.95rem;
+        }
+
+        .story-panel h4 {
+            color: var(--success);
+            font-size: 1.05rem;
+            margin-bottom: 10px;
+        }
+
+        .char-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+            gap: 15px;
+        }
+
+        .char-card {
+            background: rgba(255,255,255,0.02);
+            border: 1px solid var(--panel-border);
+            border-radius: 12px;
+            padding: 12px;
+        }
+
+        .char-card h5 {
+            color: var(--secondary);
+            font-size: 0.95rem;
+            margin-bottom: 4px;
+        }
+
+        .char-card p {
+            font-size: 0.8rem;
+            color: var(--text-muted);
+            line-height: 1.4;
+        }
+
+        .bullet-list {
+            list-style: none;
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+
+        .bullet-list li {
+            position: relative;
+            padding-left: 20px;
+            font-size: 0.9rem;
+            line-height: 1.4;
+        }
+
+        .bullet-list li::before {
+            content: "•";
+            color: var(--primary);
+            position: absolute;
+            left: 5px;
+            font-weight: bold;
+            font-size: 1.1rem;
+            top: -2px;
+        }
+
+        .side-by-side {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 1.5rem;
+        }
+
+        .reveal-box {
+            background: rgba(245, 158, 11, 0.03);
+            border: 1px solid rgba(245, 158, 11, 0.2);
+            border-radius: 12px;
+            padding: 1.25rem;
+        }
+        .reveal-box h4 { color: var(--warning); margin-bottom: 12px; }
+
+        .mystery-box {
+            background: rgba(239, 68, 68, 0.03);
+            border: 1px solid rgba(239, 68, 68, 0.2);
+            border-radius: 12px;
+            padding: 1.25rem;
+        }
+        .mystery-box h4 { color: var(--danger); margin-bottom: 12px; }
+
+        .remember-box {
+            background: rgba(245, 158, 11, 0.08);
+            border: 1px solid var(--warning);
+            border-radius: 12px;
+            padding: 1.25rem;
+        }
+        
+        .remember-box h4 {
+            color: #ffffff;
+            margin-bottom: 8px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        /* Modal Settings */
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.6);
+            backdrop-filter: blur(8px);
+            align-items: center;
+            justify-content: center;
+            z-index: 100;
+        }
+
+        .modal-content {
+            background: #151125;
+            border: 1px solid var(--panel-border);
+            border-radius: 16px;
+            width: 480px;
+            padding: 1.5rem;
+            box-shadow: var(--shadow);
+            position: relative;
+        }
+
+        .modal-header {
+            font-size: 1.2rem;
+            font-weight: 700;
+            margin-bottom: 15px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .close-btn {
+            font-size: 1.5rem;
+            cursor: pointer;
+            color: var(--text-muted);
+        }
+        .close-btn:hover {
+            color: white;
+        }
+
+        /* Utils */
+        .flex-row {
+            display: flex;
+            gap: 10px;
+        }
+        .w-half { width: 50%; }
+
+        .spinner {
+            border: 3px solid rgba(255,255,255,0.1);
+            width: 20px;
+            height: 20px;
+            border-radius: 50%;
+            border-left-color: var(--primary);
+            animation: spin 1s linear infinite;
+            display: inline-block;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        /* Reader Styles */
+        .reader-modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            background: #030206;
+            z-index: 1000;
+            flex-direction: column;
+        }
+        .reader-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 10px 20px;
+            background: rgba(10, 8, 18, 0.9);
+            border-bottom: 1px solid rgba(255,255,255,0.08);
+            backdrop-filter: blur(12px);
+            z-index: 1010;
+            gap: 15px;
+        }
+        .reader-pages {
+            flex: 1;
+            overflow-y: auto;
+            padding: 0 0 40px 0;
+            background: #000000;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+        .reader-pages img {
+            width: 100%;
+            max-width: 800px;
+            display: block;
+            margin: 0 auto;
+            border: none;
+            padding: 0;
+        }
+        .btn:disabled {
+            background: rgba(255,255,255,0.05);
+            color: var(--text-muted);
+            cursor: not-allowed;
+            border-color: transparent;
+            box-shadow: none;
+            transform: none;
+        }
+
+        /* Responsive design for 1080x1920 portrait screens and mobile devices */
+        @media (max-width: 768px) {
+            body {
+                overflow-y: auto;
+            }
+            header {
+                padding: 1rem 1.5rem;
+            }
+            .app-container {
+                flex-direction: column;
+                height: auto;
+                overflow-y: visible;
+                padding: 1rem;
+                gap: 1.25rem;
+            }
+            .sidebar {
+                width: 100%;
+            }
+            .main-content {
+                overflow-y: visible;
+                padding-right: 0;
+            }
+            .grid-two-col {
+                grid-template-columns: 1fr;
+                gap: 1.25rem;
+            }
+            .side-by-side {
+                grid-template-columns: 1fr;
+                gap: 1.25rem;
+            }
+        }
+
+        /* Scrubber visual hover state */
+        #reader-scrubber:hover {
+            width: 10px !important;
+            background: rgba(255,255,255,0.15) !important;
+        }
+        #reader-scrubber:hover #reader-scrubber-handle {
+            transform: scale(1.1);
+            background: #ffffff !important;
+            border-color: var(--secondary) !important;
+        }
+    </style>
+</head>
+<body>
+
+    <!-- Header -->
+    <header>
+        <div class="logo-area">
+            <span class="logo-icon">M</span>
+            <div class="logo-text">
+                <h1>Manga Memory AI</h1>
+                <p>Story Summarizer & Refresh Engine</p>
+            </div>
+        </div>
+        <div class="config-area">
+            <div id="key-badge" class="key-badge missing" onclick="openKeyModal()">
+                <span id="badge-dot">●</span> <span id="badge-text">Gemini Key Missing</span>
+            </div>
+        </div>
+    </header>
+
+    <!-- App Main Frame -->
+    <div class="app-container">
+        
+        <!-- Left Column: Series Listing & Form -->
+        <div class="sidebar">
+            
+            <!-- Series Panel -->
+            <div class="glass-panel" style="flex: 1;">
+                <div class="panel-title">
+                    My Series
+                </div>
+                <div id="series-list" class="series-list-container">
+                    <!-- Cards populated here -->
+                </div>
+            </div>
+
+            <!-- Add Series Form -->
+            <div class="glass-panel">
+                <div class="panel-title">Add Series</div>
+                <div class="form-group">
+                    <label for="new-name">Series Name</label>
+                    <input type="text" id="new-name" class="form-input" placeholder="e.g. Solo Leveling">
+                </div>
+                <div class="form-group">
+                    <label for="new-url">Scraping Page URL</label>
+                    <input type="text" id="new-url" class="form-input" placeholder="e.g. https://site.com/manga/solo">
+                </div>
+                <button class="btn" onclick="addSeries()">Add Series</button>
+            </div>
+
+        </div>
+
+        <!-- Right Column: Interactive details / Console / Summaries -->
+        <div class="main-content">
+            
+            <!-- Empty state when no series is active -->
+            <div id="empty-state" class="empty-state">
+                <div class="empty-state-icon">📖</div>
+                <h2>Welcome to Manga Memory AI</h2>
+                <p>Select a manga series from the sidebar or add a new one to begin processing chapters.</p>
+            </div>
+
+            <!-- Active Series details block -->
+            <div id="details-view" style="display: none;" class="main-content">
+                
+                <!-- Title header -->
+                <div class="series-header">
+                    <div class="series-header-info">
+                        <h2 id="active-title">Series Title</h2>
+                        <p>Source URL: <a id="active-url" href="#" target="_blank">URL</a></p>
+                    </div>
+                    <div>
+                        <button class="btn btn-outline-danger" onclick="deleteActiveSeries()">Delete Series</button>
+                    </div>
+                </div>
+
+                <!-- Middle row: Pipeline Controls & Chapters List -->
+                <div class="grid-two-col">
+                    
+                    <!-- Controls -->
+                    <div class="glass-panel control-panel">
+                        <div class="panel-title">Pipeline Controls</div>
+                        <div class="form-group">
+                            <label>Start Chapter (Optional)</label>
+                            <input type="number" id="start-ch" class="form-input" placeholder="e.g. 1" step="any">
+                        </div>
+                        <div class="form-group">
+                            <label>End Chapter (Optional)</label>
+                            <input type="number" id="end-ch" class="form-input" placeholder="e.g. 20" step="any">
+                        </div>
+                        
+                        <div class="pipeline-buttons">
+                            <button class="btn" onclick="triggerPipeline('all')">Run Full Pipeline</button>
+                            <button class="btn btn-secondary" onclick="triggerPipeline('download')">1. Download Pages</button>
+                            <button class="btn btn-secondary" onclick="triggerPipeline('clean')">2. Clean Duplicates</button>
+                            <button class="btn btn-secondary" onclick="triggerPipeline('ocr')">3. Extract OCR Text</button>
+                            <button class="btn btn-secondary" onclick="triggerPipeline('summarize')">4. AI Summarize</button>
+                        </div>
+                    </div>
+
+                    <!-- Chapters Grid -->
+                    <div class="glass-panel" style="max-height: 380px;">
+                        <div class="panel-title" style="display: flex; justify-content: space-between; align-items: center; width: 100%;">
+                            <span>Chapters List</span>
+                            <div id="batch-delete-controls" style="display: none; align-items: center; gap: 8px;">
+                                <button class="btn btn-outline-danger" style="padding: 4px 8px; font-size: 0.75rem;" onclick="deleteSelectedChapters()">Delete Selected</button>
+                            </div>
+                        </div>
+                        <div id="chapters-list" class="chapters-view">
+                            <!-- Filled dynamically -->
+                        </div>
+                    </div>
+
+                </div>
+
+                <!-- Console Console log box -->
+                <div class="glass-panel console-panel">
+                    <div class="console-header">
+                        <span>Background Worker Log Console</span>
+                        <span id="console-status">Status: Idle</span>
+                    </div>
+                    <div id="console-box" class="console-box">
+                        <div class="log-line">Console initialized. Ready for operations.</div>
+                    </div>
+                </div>
+
+                <!-- Memory Refresh Generator -->
+                <div class="glass-panel">
+                    <div class="panel-title">Memory Refresh cheat sheet</div>
+                    <div style="display: flex; gap: 15px; align-items: flex-end; margin-bottom: 20px;">
+                        <div class="form-group" style="margin-bottom: 0; flex: 1;">
+                            <label for="refresh-ch">Refresh my memory up to chapter:</label>
+                            <input type="number" id="refresh-ch" class="form-input" placeholder="e.g. 40" step="any">
+                        </div>
+                        <button class="btn" onclick="generateRefresh()">Get Cheat Sheet</button>
+                    </div>
+
+                    <!-- Output Container -->
+                    <div id="refresh-output" class="refresh-display" style="display: none;">
+                        
+                        <div class="story-panel">
+                            <h4>The Story So Far</h4>
+                            <p id="ref-story">Story narrative here...</p>
+                        </div>
+
+                        <div>
+                            <h4 style="margin-bottom: 10px; color: var(--secondary)">Main Characters</h4>
+                            <div id="ref-chars" class="char-grid">
+                                <!-- Cards -->
+                            </div>
+                        </div>
+
+                        <div class="glass-panel" style="padding: 1.25rem; background: rgba(0,0,0,0.15)">
+                            <h4 style="margin-bottom: 10px; color: var(--primary-hover)">Character Relationships</h4>
+                            <ul id="ref-rels" class="bullet-list">
+                                <!-- Items -->
+                            </ul>
+                        </div>
+
+                        <div class="side-by-side">
+                            <div class="reveal-box">
+                                <h4>Important Reveals</h4>
+                                <ul id="ref-reveals" class="bullet-list">
+                                    <!-- Items -->
+                                </ul>
+                            </div>
+                            <div class="mystery-box">
+                                <h4>Unresolved Mysteries</h4>
+                                <ul id="ref-mysteries" class="bullet-list">
+                                    <!-- Items -->
+                                </ul>
+                            </div>
+                        </div>
+
+                        <div id="ref-remember-box" class="remember-box">
+                            <h4>⚠️ Things to Remember Before Chapter <span id="ref-next-ch">101</span></h4>
+                            <ul id="ref-remember" class="bullet-list" style="color: #ffffff">
+                                <!-- Items -->
+                            </ul>
+                        </div>
+
+                    </div>
+                </div>
+
+            </div>
+
+        </div>
+
+    </div>
+
+    <!-- Manhwa Reader Modal -->
+    <div id="reader-modal" class="reader-modal">
+        <!-- Header -->
+        <div class="reader-header">
+            <div style="display: flex; align-items: center; gap: 15px; min-width: 0;">
+                <button class="btn btn-secondary" onclick="closeReader()" style="padding: 6px 12px; font-size: 0.85rem; flex-shrink: 0;">✕ Close</button>
+                <h3 id="reader-title" style="font-size: 1.1rem; font-weight: 600; color: #ffffff; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">Reading Chapter</h3>
+            </div>
+            
+            <div style="display: flex; align-items: center; gap: 10px; flex-shrink: 0;">
+                <button id="reader-prev-btn" class="btn btn-secondary" style="padding: 6px 14px; font-size: 0.85rem;">◀ Prev</button>
+                <button id="reader-next-btn" class="btn" style="padding: 6px 14px; font-size: 0.85rem;">Next ▶</button>
+            </div>
+        </div>
+        
+        <!-- Reader Pages -->
+        <div id="reader-pages" class="reader-pages">
+            <!-- Images will be inserted here dynamically -->
+        </div>
+
+        <!-- Chapter Scrubber / Scroll Slider -->
+        <div id="reader-scrubber" style="position: fixed; right: 20px; top: 100px; bottom: 90px; width: 6px; background: rgba(255,255,255,0.08); border-radius: 10px; z-index: 1030; cursor: pointer; transition: all 0.2s;">
+            <!-- Hover area to make clicking easier -->
+            <div id="reader-scrubber-hover" style="position: absolute; left: -10px; right: -10px; top: 0; bottom: 0; cursor: pointer;"></div>
+            <!-- Progress Fill -->
+            <div id="reader-scrubber-fill" style="position: absolute; top: 0; left: 0; width: 100%; height: 0%; background: linear-gradient(to bottom, var(--primary), var(--secondary)); border-radius: 10px; opacity: 0.7;"></div>
+            <!-- Handle -->
+            <div id="reader-scrubber-handle" style="position: absolute; top: 0; left: -5px; width: 16px; height: 32px; background: #ffffff; border: 2px solid var(--primary); border-radius: 8px; box-shadow: 0 0 10px var(--primary-glow); cursor: grab; transition: background 0.2s, transform 0.1s;"></div>
+            <!-- Tooltip -->
+            <div id="reader-scrubber-tooltip" style="position: absolute; right: 25px; transform: translateY(-50%); background: rgba(15, 10, 28, 0.95); border: 1px solid var(--panel-border); color: #ffffff; padding: 6px 12px; border-radius: 6px; font-size: 0.75rem; font-weight: 600; white-space: nowrap; pointer-events: none; opacity: 0; transition: opacity 0.15s; box-shadow: var(--shadow);">
+                Page 1
+            </div>
+        </div>
+
+        <!-- Floating Back-to-Top Button -->
+        <button onclick="document.getElementById('reader-pages').scrollTo({top: 0, behavior: 'smooth'})" 
+                style="position: fixed; bottom: 25px; right: 25px; background: var(--primary); border: none; width: 45px; height: 45px; border-radius: 50%; color: white; font-size: 1.2rem; cursor: pointer; box-shadow: 0 4px 15px rgba(138, 92, 245, 0.4); display: flex; align-items: center; justify-content: center; z-index: 1020; transition: all 0.2s;">
+            ↑
+        </button>
+    </div>
+
+    <!-- API Key Settings Modal -->
+    <div id="key-modal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <span>Gemini API Key Settings</span>
+                <span class="close-btn" onclick="closeKeyModal()">&times;</span>
+            </div>
+            <div class="form-group">
+                <label for="modal-key-input">Enter Gemini API Key</label>
+                <input type="password" id="modal-key-input" class="form-input" placeholder="AIzaSy...">
+            </div>
+            <div style="display: flex; justify-content: flex-end; gap: 10px; margin-top: 15px;">
+                <button class="btn btn-secondary" onclick="closeKeyModal()">Cancel</button>
+                <button class="btn" onclick="saveKey()">Save Key</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- JS Logic -->
+    <script>
+        let currentSeriesId = null;
+        let activeTaskId = null;
+        let consolePollInterval = null;
+        let currentChapters = [];
+        let currentReadingSeriesId = null;
+        let currentReadingChapterNum = null;
+
+        // Fetch config on load
+        async function fetchConfig() {
+            try {
+                const res = await fetch("/api/config");
+                const data = await res.json();
+                const badge = document.getElementById("key-badge");
+                const badgeText = document.getElementById("badge-text");
+                
+                if (data.has_key) {
+                    badge.className = "key-badge";
+                    badgeText.innerText = "Gemini Key: Active";
+                } else {
+                    badge.className = "key-badge missing";
+                    badgeText.innerText = "Gemini Key Missing";
+                }
+            } catch (err) {
+                console.error("Failed to load config details", err);
+            }
+        }
+
+        // List series in DB
+        async function loadSeries() {
+            try {
+                const res = await fetch("/api/series");
+                const data = await res.json();
+                const container = document.getElementById("series-list");
+                container.innerHTML = "";
+                
+                if (data.length === 0) {
+                    container.innerHTML = "<p style='color: var(--text-muted); font-size: 0.85rem; text-align: center; margin-top: 20px;'>No series added yet.</p>";
+                    return;
+                }
+
+                data.forEach(item => {
+                    const card = document.createElement("div");
+                    card.className = `series-card ${item.id === currentSeriesId ? 'active' : ''}`;
+                    card.onclick = () => selectSeries(item.id);
+                    card.innerHTML = `
+                        <h3>${item.name}</h3>
+                        <p>${item.url}</p>
+                        <div class="card-footer">
+                            <span class="chapters-badge">${item.chapters_count} Chapters</span>
+                        </div>
+                    `;
+                    container.appendChild(card);
+                });
+            } catch (err) {
+                console.error("Failed to load series", err);
+            }
+        }
+
+        // Select active series
+        async function selectSeries(seriesId) {
+            currentSeriesId = seriesId;
+            document.getElementById("empty-state").style.display = "none";
+            document.getElementById("details-view").style.display = "flex";
+            document.getElementById("refresh-output").style.display = "none";
+            document.getElementById("refresh-ch").value = "";
+            
+            // Reload series cards styling
+            loadSeries();
+            
+            try {
+                const res = await fetch(`/api/series/${seriesId}`);
+                const data = await res.json();
+                
+                document.getElementById("active-title").innerText = data.series.name;
+                const activeUrl = document.getElementById("active-url");
+                activeUrl.innerText = data.series.url;
+                activeUrl.href = data.series.url;
+
+                // Save chapters list globally for reader navigation
+                currentChapters = data.chapters || [];
+
+                // Reset batch controls visibility
+                const batchControls = document.getElementById("batch-delete-controls");
+                if (batchControls) batchControls.style.display = "none";
+
+                // Load chapters status list
+                const chaptersContainer = document.getElementById("chapters-list");
+                chaptersContainer.innerHTML = "";
+                
+                if (currentChapters.length === 0) {
+                    chaptersContainer.innerHTML = "<p style='color: var(--text-muted); font-size: 0.85rem; padding: 10px;'>No chapters downloaded yet. Use the pipeline to download chapters.</p>";
+                    return;
+                }
+
+                // Add "Select All" header row
+                const headerRow = document.createElement("div");
+                headerRow.className = "chapter-row";
+                headerRow.style.position = "sticky";
+                headerRow.style.top = "0";
+                headerRow.style.background = "#151125"; // Sticky header backdrop match
+                headerRow.style.zIndex = "10";
+                headerRow.style.borderBottom = "1px solid var(--panel-border)";
+                headerRow.style.padding = "8px 12px";
+                headerRow.style.fontWeight = "600";
+                headerRow.innerHTML = `
+                    <div style="display: flex; align-items: center; gap: 8px;">
+                        <input type="checkbox" id="select-all-chapters" onchange="toggleSelectAllChapters(this)" style="cursor: pointer; width: 14px; height: 14px; accent-color: var(--primary);">
+                        <span style="font-size: 0.85rem;">Select All</span>
+                    </div>
+                    <span style="font-size: 0.85rem; color: var(--text-muted);" id="selected-chapters-count">0 selected</span>
+                `;
+                chaptersContainer.appendChild(headerRow);
+
+                currentChapters.forEach(ch => {
+                    const row = document.createElement("div");
+                    row.className = "chapter-row";
+                    
+                    // Chapter is readable if it has downloaded images
+                    const readableStatuses = ["downloaded", "cleaned", "ocr_completed", "summarized"];
+                    const isReadable = readableStatuses.includes(ch.status);
+                    
+                    row.innerHTML = `
+                        <div style="display: flex; align-items: center; gap: 8px; min-width: 0; flex: 1;">
+                            <input type="checkbox" class="chapter-select-checkbox" data-chapter-num="${ch.chapter_num}" onchange="updateSelectedCount()" style="cursor: pointer; width: 14px; height: 14px; accent-color: var(--primary); flex-shrink: 0;">
+                            <div style="display: flex; flex-direction: column; gap: 4px; min-width: 0; overflow: hidden; text-overflow: ellipsis; flex: 1;">
+                                <span style="white-space: nowrap; overflow: hidden; text-overflow: ellipsis;"><strong>Chapter ${ch.chapter_num}</strong> - ${ch.title || 'No Title'}</span>
+                                <span class="status-badge status-${ch.status}" style="align-self: flex-start;">${ch.status.replace('_', ' ')}</span>
+                            </div>
+                        </div>
+                        <div style="display: flex; gap: 8px; align-items: center; flex-shrink: 0;">
+                            ${isReadable ? `<button class="btn" style="padding: 4px 10px; font-size: 0.75rem;" onclick="openReader(${seriesId}, '${ch.chapter_num}')">Read</button>` : ''}
+                            <button class="btn btn-outline-danger" style="padding: 4px 8px; font-size: 0.75rem;" onclick="deleteChapter(${seriesId}, '${ch.chapter_num}', event)" title="Delete Chapter Files & Summary">🗑</button>
+                        </div>
+                    `;
+                    chaptersContainer.appendChild(row);
+                });
+            } catch (err) {
+                console.error("Failed to load series details", err);
+            }
+        }
+
+        // Delete Chapter
+        async function deleteChapter(seriesId, chapterNum, event) {
+            if (event) event.stopPropagation();
+            const confirmDel = confirm(`Are you sure you want to delete Chapter ${chapterNum}? This will delete the downloaded images, OCR text, and summaries for this chapter.`);
+            if (!confirmDel) return;
+            
+            try {
+                const res = await fetch(`/api/series/${seriesId}/chapters/${chapterNum}/delete`, {
+                    method: "POST"
+                });
+                if (res.ok) {
+                    selectSeries(seriesId);
+                } else {
+                    const data = await res.json();
+                    alert("Error: " + (data.error || "Failed to delete chapter."));
+                }
+            } catch (err) {
+                console.error("Failed to delete chapter", err);
+                alert("Network error. Failed to delete chapter.");
+            }
+        }
+
+        // Selection Handlers
+        function toggleSelectAllChapters(masterCheckbox) {
+            const checkboxes = document.querySelectorAll(".chapter-select-checkbox");
+            checkboxes.forEach(cb => {
+                cb.checked = masterCheckbox.checked;
+            });
+            updateSelectedCount();
+        }
+
+        function updateSelectedCount() {
+            const checkboxes = document.querySelectorAll(".chapter-select-checkbox");
+            const checkedBoxes = Array.from(checkboxes).filter(cb => cb.checked);
+            const count = checkedBoxes.length;
+
+            const counterText = document.getElementById("selected-chapters-count");
+            if (counterText) {
+                counterText.innerText = `${count} selected`;
+            }
+
+            const batchControls = document.getElementById("batch-delete-controls");
+            if (batchControls) {
+                batchControls.style.display = count > 0 ? "flex" : "none";
+            }
+        }
+
+        async function deleteSelectedChapters() {
+            if (!currentSeriesId) return;
+
+            const checkboxes = document.querySelectorAll(".chapter-select-checkbox");
+            const checkedBoxes = Array.from(checkboxes).filter(cb => cb.checked);
+            if (checkedBoxes.length === 0) return;
+
+            const confirmDel = confirm(`Are you sure you want to delete all ${checkedBoxes.length} selected chapters? This will delete the downloaded images, OCR text, and summaries for all selected chapters.`);
+            if (!confirmDel) return;
+
+            const deleteBtn = document.querySelector("#batch-delete-controls button");
+            const originalText = deleteBtn.innerText;
+            deleteBtn.disabled = true;
+            deleteBtn.innerText = "Deleting...";
+
+            // Fire parallel delete requests
+            const deletePromises = checkedBoxes.map(cb => {
+                const chNum = cb.getAttribute("data-chapter-num");
+                return fetch(`/api/series/${currentSeriesId}/chapters/${chNum}/delete`, {
+                    method: "POST"
+                });
+            });
+
+            try {
+                await Promise.all(deletePromises);
+                selectSeries(currentSeriesId);
+            } catch (err) {
+                console.error("Failed to batch delete chapters", err);
+                alert("An error occurred during batch deletion.");
+            } finally {
+                deleteBtn.disabled = false;
+                deleteBtn.innerText = originalText;
+            }
+        }
+
+        // Add Series
+        async function addSeries() {
+            const name = document.getElementById("new-name").value.strip ? document.getElementById("new-name").value.strip() : document.getElementById("new-name").value;
+            const url = document.getElementById("new-url").value.strip ? document.getElementById("new-url").value.strip() : document.getElementById("new-url").value;
+            
+            if (!name || !url) {
+                alert("Please fill in both name and URL.");
+                return;
+            }
+
+            try {
+                const res = await fetch("/api/series", {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({ name, url })
+                });
+                const data = await res.json();
+                if (res.ok) {
+                    document.getElementById("new-name").value = "";
+                    document.getElementById("new-url").value = "";
+                    loadSeries();
+                    selectSeries(data.id);
+                } else {
+                    alert("Error: " + data.error);
+                }
+            } catch (err) {
+                console.error("Failed to add series", err);
+            }
+        }
+
+        // Delete Active Series
+        async function deleteActiveSeries() {
+            if (!currentSeriesId) return;
+            const confirmDel = confirm("Are you sure you want to delete this series? This will delete the SQLite records and all downloaded chapter image folders.");
+            if (!confirmDel) return;
+
+            try {
+                const res = await fetch(`/api/series/${currentSeriesId}/delete`, {
+                    method: "POST"
+                });
+                if (res.ok) {
+                    currentSeriesId = null;
+                    document.getElementById("details-view").style.display = "none";
+                    document.getElementById("empty-state").style.display = "flex";
+                    loadSeries();
+                }
+            } catch (err) {
+                console.error("Failed to delete series", err);
+            }
+        }
+
+        // Trigger Pipeline run
+        async function triggerPipeline(step) {
+            if (!currentSeriesId) return;
+            const startChapter = document.getElementById("start-ch").value;
+            const endChapter = document.getElementById("end-ch").value;
+
+            try {
+                const res = await fetch("/api/pipeline/run", {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({
+                        series_id: currentSeriesId,
+                        step: step,
+                        start_chapter: startChapter,
+                        end_chapter: endChapter
+                    })
+                });
+                const data = await res.json();
+                
+                if (data.task_id) {
+                    activeTaskId = data.task_id;
+                    startLogPolling();
+                } else {
+                    alert("Failed to trigger task: " + data.error);
+                }
+            } catch (err) {
+                console.error("Failed to run pipeline step", err);
+            }
+        }
+
+        // Poll Logs in console box
+        function startLogPolling() {
+            if (consolePollInterval) clearInterval(consolePollInterval);
+            
+            const consoleBox = document.getElementById("console-box");
+            consoleBox.innerHTML = "<div class='log-line'>Task starting...</div>";
+            document.getElementById("console-status").innerText = "Status: Executing...";
+
+            consolePollInterval = setInterval(async () => {
+                if (!activeTaskId) return;
+                try {
+                    const res = await fetch(`/api/tasks/${activeTaskId}`);
+                    const data = await res.json();
+
+                    // Format logs
+                    consoleBox.innerHTML = "";
+                    data.logs.forEach(log => {
+                        const line = document.createElement("div");
+                        line.className = "log-line";
+                        
+                        if (log.includes("[ERROR]")) {
+                            line.className += " log-line-error";
+                        } else if (log.includes("[WARNING]")) {
+                            line.className += " log-line-warning";
+                        } else {
+                            line.className += " log-line-info";
+                        }
+                        line.innerText = log;
+                        consoleBox.appendChild(line);
+                    });
+                    
+                    // Auto scroll
+                    consoleBox.scrollTop = consoleBox.scrollHeight;
+
+                    // Refresh the chapters list in real-time as background execution proceeds
+                    if (currentSeriesId) {
+                        refreshChaptersListOnly(currentSeriesId);
+                    }
+
+                    // Update Status text
+                    if (data.status === "completed") {
+                        document.getElementById("console-status").innerText = "Status: Completed Success";
+                        clearInterval(consolePollInterval);
+                        selectSeries(currentSeriesId); // final full refresh
+                    } else if (data.status === "failed") {
+                        document.getElementById("console-status").innerText = "Status: FAILED (" + data.error + ")";
+                        clearInterval(consolePollInterval);
+                        selectSeries(currentSeriesId); // final full refresh
+                    }
+                } catch (err) {
+                    console.error("Failed to poll task logs", err);
+                }
+            }, 1000);
+        }
+
+        // Lightweight background refresh for chapters list status badges
+        async function refreshChaptersListOnly(seriesId) {
+            try {
+                // Collect currently checked checkbox chapter numbers to keep selections intact
+                const checkedChapters = new Set();
+                document.querySelectorAll(".chapter-select-checkbox:checked").forEach(cb => {
+                    checkedChapters.add(cb.getAttribute("data-chapter-num"));
+                });
+
+                const res = await fetch(`/api/series/${seriesId}`);
+                const data = await res.json();
+                
+                // Update global reference
+                currentChapters = data.chapters || [];
+
+                const chaptersContainer = document.getElementById("chapters-list");
+                
+                // Check if master select-all was checked
+                const selectAllEl = document.getElementById("select-all-chapters");
+                const selectAllChecked = selectAllEl ? selectAllEl.checked : false;
+
+                chaptersContainer.innerHTML = "";
+                
+                if (currentChapters.length === 0) {
+                    chaptersContainer.innerHTML = "<p style='color: var(--text-muted); font-size: 0.85rem; padding: 10px;'>No chapters downloaded yet. Use the pipeline to download chapters.</p>";
+                    return;
+                }
+
+                // Append sticky header row
+                const headerRow = document.createElement("div");
+                headerRow.className = "chapter-row";
+                headerRow.style.position = "sticky";
+                headerRow.style.top = "0";
+                headerRow.style.background = "#151125";
+                headerRow.style.zIndex = "10";
+                headerRow.style.borderBottom = "1px solid var(--panel-border)";
+                headerRow.style.padding = "8px 12px";
+                headerRow.style.fontWeight = "600";
+                headerRow.innerHTML = `
+                    <div style="display: flex; align-items: center; gap: 8px;">
+                        <input type="checkbox" id="select-all-chapters" ${selectAllChecked ? 'checked' : ''} onchange="toggleSelectAllChapters(this)" style="cursor: pointer; width: 14px; height: 14px; accent-color: var(--primary);">
+                        <span style="font-size: 0.85rem;">Select All</span>
+                    </div>
+                    <span style="font-size: 0.85rem; color: var(--text-muted);" id="selected-chapters-count">0 selected</span>
+                `;
+                chaptersContainer.appendChild(headerRow);
+
+                currentChapters.forEach(ch => {
+                    const row = document.createElement("div");
+                    row.className = "chapter-row";
+                    
+                    const readableStatuses = ["downloaded", "cleaned", "ocr_completed", "summarized"];
+                    const isReadable = readableStatuses.includes(ch.status);
+                    const isChecked = checkedChapters.has(String(ch.chapter_num));
+                    
+                    row.innerHTML = `
+                        <div style="display: flex; align-items: center; gap: 8px; min-width: 0; flex: 1;">
+                            <input type="checkbox" class="chapter-select-checkbox" ${isChecked ? 'checked' : ''} data-chapter-num="${ch.chapter_num}" onchange="updateSelectedCount()" style="cursor: pointer; width: 14px; height: 14px; accent-color: var(--primary); flex-shrink: 0;">
+                            <div style="display: flex; flex-direction: column; gap: 4px; min-width: 0; overflow: hidden; text-overflow: ellipsis; flex: 1;">
+                                <span style="white-space: nowrap; overflow: hidden; text-overflow: ellipsis;"><strong>Chapter ${ch.chapter_num}</strong> - ${ch.title || 'No Title'}</span>
+                                <span class="status-badge status-${ch.status}" style="align-self: flex-start;">${ch.status.replace('_', ' ')}</span>
+                            </div>
+                        </div>
+                        <div style="display: flex; gap: 8px; align-items: center; flex-shrink: 0;">
+                            ${isReadable ? `<button class="btn" style="padding: 4px 10px; font-size: 0.75rem;" onclick="openReader(${seriesId}, '${ch.chapter_num}')">Read</button>` : ''}
+                            <button class="btn btn-outline-danger" style="padding: 4px 8px; font-size: 0.75rem;" onclick="deleteChapter(${seriesId}, '${ch.chapter_num}', event)" title="Delete Chapter Files & Summary">🗑</button>
+                        </div>
+                    `;
+                    chaptersContainer.appendChild(row);
+                });
+                
+                updateSelectedCount();
+            } catch (err) {
+                console.error("Failed to refresh chapters list dynamically", err);
+            }
+        }
+
+        // Generate Memory Refresh sheet
+        async function generateRefresh() {
+            if (!currentSeriesId) return;
+            const chapterNum = document.getElementById("refresh-ch").value;
+            if (!chapterNum) {
+                alert("Please enter a chapter number to refresh.");
+                return;
+            }
+
+            const outputDiv = document.getElementById("refresh-output");
+            outputDiv.style.display = "flex";
+            outputDiv.innerHTML = `<div style="text-align: center; padding: 40px;"><div class="spinner"></div><p style="margin-top:10px; color: var(--text-muted)">Analyzing database and synthesizing report via Gemini API...</p></div>`;
+
+            try {
+                const res = await fetch(`/api/series/${currentSeriesId}/memory-refresh/${chapterNum}`);
+                const data = await res.json();
+
+                if (!res.ok) {
+                    outputDiv.innerHTML = `<div class="mystery-box" style="margin-top: 10px;"><h4>Failed to Generate Cheat Sheet</h4><p>${data.error || 'Unknown error'}</p></div>`;
+                    return;
+                }
+
+                // Render cheat sheet html structures
+                let charCardsHtml = "";
+                data.main_characters.forEach(c => {
+                    charCardsHtml += `
+                        <div class="char-card">
+                            <h5>${c.name}</h5>
+                            <p>${c.description}</p>
+                        </div>
+                    `;
+                });
+
+                let relsHtml = "";
+                data.character_relationships.forEach(r => {
+                    relsHtml += `<li>${r}</li>`;
+                });
+
+                let revealsHtml = "";
+                data.important_reveals.forEach(rev => {
+                    revealsHtml += `<li>${rev}</li>`;
+                });
+
+                let mysteriesHtml = "";
+                data.unresolved_mysteries.forEach(m => {
+                    mysteriesHtml += `<li>${m}</li>`;
+                });
+
+                let rememberHtml = "";
+                data.things_to_remember.forEach(rem => {
+                    rememberHtml += `<li>${rem}</li>`;
+                });
+
+                let nextChapter = parseFloat(chapterNum) + 1;
+                if (parseFloat(chapterNum) % 1 === 0) {
+                    nextChapter = parseInt(chapterNum) + 1;
+                }
+
+                outputDiv.innerHTML = `
+                    <div class="story-panel">
+                        <h4>The Story So Far</h4>
+                        <p>${data.story_so_far}</p>
+                    </div>
+
+                    <div>
+                        <h4 style="margin-bottom: 10px; color: var(--secondary)">Main Characters</h4>
+                        <div class="char-grid">${charCardsHtml || '<p style="color:var(--text-muted)">No active characters listed.</p>'}</div>
+                    </div>
+
+                    <div class="glass-panel" style="padding: 1.25rem; background: rgba(0,0,0,0.15)">
+                        <h4 style="margin-bottom: 10px; color: var(--primary-hover)">Character Relationships</h4>
+                        <ul class="bullet-list">${relsHtml || '<li>No active relationship dynamics.</li>'}</ul>
+                    </div>
+
+                    <div class="side-by-side">
+                        <div class="reveal-box">
+                            <h4>Important Reveals</h4>
+                            <ul class="bullet-list">${revealsHtml || '<li>No reveals uncovered yet.</li>'}</ul>
+                        </div>
+                        <div class="mystery-box">
+                            <h4>Unresolved Mysteries</h4>
+                            <ul class="bullet-list">${mysteriesHtml || '<li>All questions solved!</li>'}</ul>
+                        </div>
+                    </div>
+
+                    <div class="remember-box">
+                        <h4>⚠️ Things to Remember Before Chapter ${nextChapter}</h4>
+                        <ul class="bullet-list" style="color: #ffffff">${rememberHtml || '<li>Enjoy reading!</li>'}</ul>
+                    </div>
+                `;
+            } catch (err) {
+                outputDiv.innerHTML = `<div class="mystery-box" style="margin-top: 10px;"><h4>Network Error</h4><p>Failed to connect to the backend server.</p></div>`;
+                console.error("Failed to generate memory refresh data", err);
+            }
+        }
+
+        // Modal Controls
+        function openKeyModal() {
+            document.getElementById("key-modal").style.display = "flex";
+            fetchConfig().then(() => {
+                // Pre-fill input if needed or just clear
+                document.getElementById("modal-key-input").value = "";
+            });
+        }
+        function closeKeyModal() {
+            document.getElementById("key-modal").style.display = "none";
+        }
+        
+        async function saveKey() {
+            const key = document.getElementById("modal-key-input").value;
+            if (!key) {
+                alert("Please enter a key.");
+                return;
+            }
+            try {
+                const res = await fetch("/api/config/save_key", {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({ api_key: key })
+                });
+                if (res.ok) {
+                    closeKeyModal();
+                    fetchConfig();
+                } else {
+                    alert("Failed to save key");
+                }
+            } catch (err) {
+                console.error("Failed to save key", err);
+            }
+        }
+
+        // Reader Controls
+        async function openReader(seriesId, chapterNum) {
+            const readerModal = document.getElementById("reader-modal");
+            const readerPages = document.getElementById("reader-pages");
+            const readerTitle = document.getElementById("reader-title");
+            
+            currentReadingSeriesId = seriesId;
+            currentReadingChapterNum = chapterNum;
+            
+            readerModal.style.display = "flex";
+            document.body.style.overflow = "hidden"; // Disable background scrolling
+            
+            readerPages.innerHTML = `
+                <div style="text-align: center; padding: 100px 0;">
+                    <div class="spinner" style="width: 40px; height: 40px;"></div>
+                    <p style="margin-top: 15px; color: var(--text-muted); font-size: 1rem;">Loading Chapter ${chapterNum}...</p>
+                </div>
+            `;
+            
+            try {
+                const res = await fetch(`/api/series/${seriesId}/chapters/${chapterNum}/images`);
+                const data = await res.json();
+                
+                if (!res.ok) {
+                    readerPages.innerHTML = `
+                        <div style="text-align: center; padding: 100px 20px;">
+                            <h3 style="color: var(--danger); margin-bottom: 10px;">Error Loading Pages</h3>
+                            <p style="color: var(--text-muted);">${data.error || 'Unknown error'}</p>
+                        </div>
+                    `;
+                    return;
+                }
+                
+                readerTitle.innerHTML = `Reading Chapter ${data.chapter_num} <span style="font-weight: 300; font-size: 0.9rem; color: var(--text-muted); margin-left: 8px;">${data.title || ''}</span>`;
+                
+                readerPages.innerHTML = "";
+                if (!data.images || data.images.length === 0) {
+                    readerPages.innerHTML = `
+                        <div style="text-align: center; padding: 100px 20px;">
+                            <p style="color: var(--text-muted);">No images found in chapter folder.</p>
+                        </div>
+                    `;
+                    return;
+                }
+                
+                data.images.forEach((imgUrl, idx) => {
+                    const img = document.createElement("img");
+                    img.src = imgUrl;
+                    img.alt = `Page ${idx + 1}`;
+                    img.loading = "lazy";
+                    readerPages.appendChild(img);
+                });
+                
+                readerPages.scrollTop = 0;
+                updateReaderNav();
+                
+                // Reset scrubber handle position on load
+                setTimeout(() => {
+                    const handle = document.getElementById("reader-scrubber-handle");
+                    const fill = document.getElementById("reader-scrubber-fill");
+                    if (handle) handle.style.top = "0px";
+                    if (fill) fill.style.height = "0%";
+                }, 100);
+            } catch (err) {
+                console.error("Failed to fetch chapter images", err);
+                readerPages.innerHTML = `
+                    <div style="text-align: center; padding: 100px 20px;">
+                        <h3 style="color: var(--danger); margin-bottom: 10px;">Network Error</h3>
+                        <p style="color: var(--text-muted);">Could not connect to the backend server.</p>
+                    </div>
+                `;
+            }
+        }
+
+        function closeReader() {
+            document.getElementById("reader-modal").style.display = "none";
+            document.body.style.overflow = ""; // Re-enable background scrolling
+        }
+
+        function updateReaderNav() {
+            const prevBtn = document.getElementById("reader-prev-btn");
+            const nextBtn = document.getElementById("reader-next-btn");
+            
+            const currentIndex = currentChapters.findIndex(ch => String(ch.chapter_num) === String(currentReadingChapterNum));
+            
+            if (currentIndex > 0) {
+                prevBtn.disabled = false;
+                prevBtn.onclick = () => {
+                    const prevCh = currentChapters[currentIndex - 1];
+                    openReader(currentReadingSeriesId, prevCh.chapter_num);
+                };
+            } else {
+                prevBtn.disabled = true;
+                prevBtn.onclick = null;
+            }
+            
+            if (currentIndex >= 0 && currentIndex < currentChapters.length - 1) {
+                nextBtn.disabled = false;
+                nextBtn.onclick = () => {
+                    const nextCh = currentChapters[currentIndex + 1];
+                    openReader(currentReadingSeriesId, nextCh.chapter_num);
+                };
+            } else {
+                nextBtn.disabled = true;
+                nextBtn.onclick = null;
+            }
+        }
+
+        // Initialize drag-and-drop scrubber
+        let isDraggingScrubber = false;
+        function initScrubber() {
+            const track = document.getElementById("reader-scrubber");
+            const handle = document.getElementById("reader-scrubber-handle");
+            const fill = document.getElementById("reader-scrubber-fill");
+            const readerPages = document.getElementById("reader-pages");
+            const tooltip = document.getElementById("reader-scrubber-tooltip");
+
+            function scrub(e) {
+                const rect = track.getBoundingClientRect();
+                const clientY = e.touches ? e.touches[0].clientY : e.clientY;
+                let percentage = (clientY - rect.top) / rect.height;
+                percentage = Math.max(0, Math.min(1, percentage));
+
+                const scrollableHeight = readerPages.scrollHeight - readerPages.clientHeight;
+                readerPages.scrollTop = percentage * scrollableHeight;
+
+                // Update positions
+                const handleHeight = handle.clientHeight;
+                const topPos = percentage * (rect.height - handleHeight);
+                handle.style.top = `${topPos}px`;
+                fill.style.height = `${percentage * 100}%`;
+
+                // Update tooltip position and content
+                tooltip.style.opacity = 1;
+                const relativeY = clientY - rect.top;
+                tooltip.style.top = `${relativeY}px`;
+
+                const imgs = readerPages.querySelectorAll("img");
+                if (imgs.length > 0) {
+                    const pageIndex = Math.min(Math.floor(percentage * imgs.length), imgs.length - 1);
+                    tooltip.innerText = `Page ${pageIndex + 1} / ${imgs.length}`;
+                } else {
+                    tooltip.innerText = `${Math.round(percentage * 100)}%`;
+                }
+            }
+
+            function onDragStart(e) {
+                isDraggingScrubber = true;
+                handle.style.cursor = "grabbing";
+                scrub(e);
+                e.preventDefault();
+            }
+
+            track.addEventListener("mousedown", onDragStart);
+            track.addEventListener("touchstart", onDragStart, { passive: false });
+
+            window.addEventListener("mousemove", (e) => {
+                if (isDraggingScrubber) scrub(e);
+            });
+            window.addEventListener("touchmove", (e) => {
+                if (isDraggingScrubber) scrub(e);
+            }, { passive: false });
+
+            const onDragEnd = () => {
+                if (isDraggingScrubber) {
+                    isDraggingScrubber = false;
+                    handle.style.cursor = "grab";
+                    tooltip.style.opacity = 0;
+                }
+            };
+
+            window.addEventListener("mouseup", onDragEnd);
+            window.addEventListener("touchend", onDragEnd);
+
+            track.addEventListener("mouseenter", () => {
+                tooltip.style.opacity = 1;
+                const scrollableHeight = readerPages.scrollHeight - readerPages.clientHeight;
+                if (scrollableHeight > 0) {
+                    const percentage = readerPages.scrollTop / scrollableHeight;
+                    const imgs = readerPages.querySelectorAll("img");
+                    if (imgs.length > 0) {
+                        const pageIndex = Math.min(Math.floor(percentage * imgs.length), imgs.length - 1);
+                        tooltip.innerText = `Page ${pageIndex + 1} / ${imgs.length}`;
+                    }
+                }
+            });
+            track.addEventListener("mouseleave", () => {
+                if (!isDraggingScrubber) tooltip.style.opacity = 0;
+            });
+
+            readerPages.addEventListener("scroll", () => {
+                if (isDraggingScrubber) return;
+                const scrollableHeight = readerPages.scrollHeight - readerPages.clientHeight;
+                if (scrollableHeight <= 0) return;
+
+                const percentage = readerPages.scrollTop / scrollableHeight;
+                const trackHeight = track.clientHeight;
+                const handleHeight = handle.clientHeight;
+
+                const topPos = percentage * (trackHeight - handleHeight);
+                handle.style.top = `${topPos}px`;
+                fill.style.height = `${percentage * 100}%`;
+            });
+        }
+
+        // Initial loading calls
+        window.onload = () => {
+            fetchConfig();
+            loadSeries();
+            initScrubber();
+        };
+    </script>
+</body>
+</html>
