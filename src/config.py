@@ -3,6 +3,12 @@ import yaml
 from pathlib import Path
 from typing import Any, Dict
 
+try:
+    from dotenv import load_dotenv
+    load_dotenv()
+except ImportError:
+    pass
+
 DEFAULT_CONFIG = {
     "database": {
         "db_path": "data/manga_memory.db"
